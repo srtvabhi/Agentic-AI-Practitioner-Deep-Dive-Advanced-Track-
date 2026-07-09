@@ -1,417 +1,285 @@
-# Module 1 Lab Guide
-# OpenAI Agent SDK with Azure AI Foundry (GPT-4.1)
+# Enterprise Agent Lab Architecture
 
-> **Module:** OpenAI Agent SDK Fundamentals  
-> **Lab:** Design an Enterprise-Grade Agent Architecture  
-> **Model:** Azure AI Foundry GPT-4.1  
-> **SDK:** OpenAI Agent SDK
+## Objective
 
----
+Build an enterprise-style tool-calling agent using the OpenAI Agents SDK.
 
-# Lab Overview
+This lab demonstrates how an agent can use multiple tools to answer user questions and call external services.
 
-In this lab, you will build an **Enterprise IT Service Desk** using the **OpenAI Agent SDK** and **Azure AI Foundry GPT-4.1**.
+The agent can:
 
-The application demonstrates how multiple AI agents collaborate to solve a real-world enterprise problem through **agent orchestration** and **agent handoffs**.
+- Get the current date and time
+- Perform basic calculations
+- Get live weather from OpenWeatherMap
+- Search the web using Serper
 
----
-
-# Learning Objectives
-
-By the end of this lab, you will be able to:
-
-- Configure the OpenAI Agent SDK with Azure AI Foundry
-- Create and activate a Python virtual environment
-- Manage project dependencies using `requirements.txt`
-- Load Azure credentials securely using a `.env` file
-- Build specialized AI agents
-- Implement agent handoffs
-- Design a scalable enterprise multi-agent architecture
-
----
-
-# Prerequisites
-
-## Software
-
-- Python 3.10 or later
-- Visual Studio Code (Recommended)
-
-## Azure Resources
-
-- Azure AI Foundry Project
-- GPT-4.1 Model Deployment
-- Azure AI Foundry Endpoint
-- Azure AI Foundry API Key
-
----
-
-# Project Setup
-
-## Step 1 — Create the Project Folder
-
-```bash
-mkdir Enterprise_Agent_Lab
-cd Enterprise_Agent_Lab
-```
-
----
-
-## Step 2 — Create a Virtual Environment
-
-### Windows
-
-```bash
-python -m venv venv
-
-venv\Scripts\activate
-```
-
-### Linux / macOS
-
-```bash
-python3 -m venv venv
-
-source venv/bin/activate
-```
-
----
-
-## Step 3 — Create `requirements.txt`
-
-Create a file named:
-
-```
-requirements.txt
-```
-
-Add the following packages:
+## Architecture Flow
 
 ```text
-openai-agents
-python-dotenv
+User Question
+   |
+   v
+main.py
+   |
+   v
+Enterprise Agent
+   |
+   +--> Date Time Tool
+   |
+   +--> Calculator Tool
+   |
+   +--> Weather Tool
+   |       |
+   |       v
+   |   Weather Service
+   |       |
+   |       v
+   |   OpenWeatherMap API
+   |
+   +--> Web Search Tool
+           |
+           v
+       Search Service
+           |
+           v
+       Serper API
 ```
 
----
-
-## Step 4 — Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Verify installation:
-
-```bash
-pip list
-```
-
----
-
-# Project Folder Structure
-
-Keep **all project files inside a single folder**.
+## Folder Structure
 
 ```text
-Enterprise_Agent_Lab/
-│
-├── venv/
+Enterprise-Agent-Lab/
 ├── .env
 ├── requirements.txt
-└── enterprise_agent_architecture.py
+├── main.py
+├── config/
+│   └── settings.py
+├── agent/
+│   └── enterprise_agent.py
+├── tools/
+│   ├── calculator.py
+│   ├── weather.py
+│   ├── search.py
+│   └── datetime_tool.py
+├── services/
+│   ├── weather_service.py
+│   └── search_service.py
+└── models/
+    └── response_models.py
 ```
 
----
+## File Responsibilities
 
-# Configure Azure AI Foundry
+### main.py
 
-## Step 5 — Create the `.env` File
+This is the entry point of the lab.
 
-Create a file named:
+It performs these steps:
 
-```
-.env
-```
+1. Loads Azure OpenAI configuration.
+2. Creates the enterprise agent.
+3. Starts a chat loop.
+4. Sends user questions to the agent.
+5. Prints the agent response.
 
-Add your Azure AI Foundry credentials.
+### config/settings.py
+
+This file handles configuration.
+
+It reads values from the local `.env` file:
 
 ```env
-AZURE_OPENAI_API_KEY=YOUR_API_KEY
-
-AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.services.ai.azure.com
-
-AZURE_OPENAI_DEPLOYMENT=gpt-4.1
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_DEPLOYMENT=
 ```
 
-> **Note**
->
-> Replace the placeholder values with your Azure AI Foundry credentials.
+It also stores external API keys used by tools:
 
----
+- OpenWeatherMap key
+- Serper key
 
-# Lab 1
-# Design an Enterprise-Grade Agent Architecture
+Finally, it creates the OpenAI client used by the OpenAI Agents SDK.
 
----
+### agent/enterprise_agent.py
 
-# Objective
+This file creates the Enterprise Tool Agent.
 
-Build a **multi-agent Enterprise IT Service Desk**.
+The agent is connected to four tools:
 
-The application consists of one coordinator agent and three specialized agents.
+- `get_current_time`
+- `calculate`
+- `get_weather`
+- `web_search`
 
----
+The agent decides which tool to call based on the user question.
 
-# Enterprise Architecture
+### tools/datetime_tool.py
+
+This file defines the date and time tool.
+
+It returns the current local system date and time.
+
+Example prompt:
 
 ```text
-                    User
-                      │
-                      ▼
-             Coordinator Agent
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-        ▼             ▼             ▼
-Classification   Knowledge      Routing
-    Agent          Agent          Agent
-        │             │             │
-        └─────────────┼─────────────┘
-                      │
-                      ▼
-               Final Response
+What is the current time?
 ```
 
----
+### tools/calculator.py
 
-# Agent Responsibilities
+This file defines the calculator tool.
 
-## Coordinator Agent
+It evaluates simple math expressions.
 
-- Receives the user request
-- Delegates work to specialized agents
-- Combines outputs
-- Returns the final response
+Example prompt:
 
----
-
-## Classification Agent
-
-Determines the issue category.
-
-Example categories:
-
-- Network
-- Hardware
-- Application
-- Security
-
----
-
-## Knowledge Agent
-
-Provides troubleshooting guidance.
-
-Example:
-
-- Verify VPN access
-- Check Internet connectivity
-- Validate login credentials
-
----
-
-## Routing Agent
-
-Determines the appropriate support team.
-
-Example teams:
-
-- Network Operations
-- Security Team
-- Infrastructure Team
-- Application Support
-
----
-
-# Learning Outcomes
-
-After completing this lab you will understand:
-
-- Multi-agent architecture
-- Agent decomposition
-- Agent handoffs
-- Enterprise workflow orchestration
-- Azure AI Foundry integration
-- OpenAI Agent SDK fundamentals
-
----
-
-# Source Code
-
-Create the file:
-
+```text
+Calculate 25 * 18 + 40
 ```
-enterprise_agent_architecture.py
-```
+
+### tools/weather.py
+
+This file defines the weather tool.
+
+The tool itself is intentionally small. It calls the weather service:
 
 ```python
-import os
-
-from dotenv import load_dotenv
-
-from agents import Agent
-from agents import Runner
-from agents import OpenAIChatCompletionsModel
-
-# ------------------------------------
-# Load Environment Variables
-# ------------------------------------
-
-load_dotenv()
-
-AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-
-# ------------------------------------
-# Configure Azure AI Foundry Model
-# ------------------------------------
-
-model = OpenAIChatCompletionsModel(
-    model=AZURE_OPENAI_DEPLOYMENT,
-    api_key=AZURE_OPENAI_API_KEY,
-    base_url=AZURE_OPENAI_ENDPOINT
-)
-
-# ------------------------------------
-# Classification Agent
-# ------------------------------------
-
-classification_agent = Agent(
-    name="Classification Agent",
-    instructions="""
-Classify incoming tickets into one of the following categories:
-
-- Network
-- Hardware
-- Application
-- Security
-"""
-)
-
-# ------------------------------------
-# Knowledge Agent
-# ------------------------------------
-
-knowledge_agent = Agent(
-    name="Knowledge Agent",
-    instructions="""
-Provide troubleshooting steps for the identified issue.
-"""
-)
-
-# ------------------------------------
-# Routing Agent
-# ------------------------------------
-
-routing_agent = Agent(
-    name="Routing Agent",
-    instructions="""
-Determine which enterprise support team should receive the ticket.
-"""
-)
-
-# ------------------------------------
-# Coordinator Agent
-# ------------------------------------
-
-coordinator = Agent(
-    name="Coordinator Agent",
-    instructions="""
-Coordinate the IT support workflow.
-
-Workflow:
-
-1. Classify the issue.
-2. Retrieve troubleshooting guidance.
-3. Determine the support team.
-4. Return the final response.
-""",
-    handoffs=[
-        classification_agent,
-        knowledge_agent,
-        routing_agent
-    ],
-    model=model
-)
-
-# ------------------------------------
-# Execute Workflow
-# ------------------------------------
-
-result = Runner.run_sync(
-    coordinator,
-    "My laptop cannot connect to VPN."
-)
-
-print(result.final_output)
+fetch_current_weather(city)
 ```
 
----
+Example prompt:
 
-# Execute the Lab
+```text
+What is the weather in Mumbai?
+```
 
-Run the application.
+### tools/search.py
+
+This file defines the web search tool.
+
+The tool itself is intentionally small. It calls the search service:
+
+```python
+search_web(query)
+```
+
+Example prompt:
+
+```text
+Search the web for latest Azure AI Foundry updates
+```
+
+### services/weather_service.py
+
+This file contains the OpenWeatherMap API logic.
+
+It:
+
+1. Builds the weather API URL.
+2. Calls OpenWeatherMap.
+3. Reads the JSON response.
+4. Converts the response into a `WeatherResponse` model.
+5. Returns a learner-friendly text response.
+
+### services/search_service.py
+
+This file contains the Serper API logic.
+
+It:
+
+1. Builds the web search request.
+2. Calls Serper.
+3. Reads the JSON response.
+4. Converts top results into `SearchResult` models.
+5. Returns a learner-friendly search summary.
+
+### models/response_models.py
+
+This file defines simple dataclasses for API responses.
+
+It contains:
+
+- `WeatherResponse`
+- `SearchResult`
+
+These models keep external API data organized before returning it to the agent.
+
+## Why This Architecture Is Enterprise Style
+
+This lab separates responsibilities:
+
+- `main.py` runs the application.
+- `agent/` defines agent behavior.
+- `tools/` exposes actions to the agent.
+- `services/` contains external API logic.
+- `models/` organizes response data.
+- `config/` handles environment and client setup.
+
+This separation makes the application easier to:
+
+- Understand
+- Test
+- Extend
+- Debug
+- Maintain
+
+## Example Prompts
+
+```text
+What is the current time?
+```
+
+```text
+Calculate 4500 / 15 + 280
+```
+
+```text
+What is the weather in Delhi?
+```
+
+```text
+Search the web for latest Azure AI Foundry updates
+```
+
+```text
+I am building an enterprise HR helpdesk agent. Search the web for best practices and summarize them.
+```
+
+## How To Run
+
+From the root workspace folder:
 
 ```bash
-python enterprise_agent_architecture.py
+cd Enterprise-Agent-Lab
+..\.venv\Scripts\python.exe main.py
 ```
 
----
+## Key Learning Points
 
-# Expected Output
+This lab teaches:
 
-```text
-Category: Network
+- Tool-driven agent systems
+- External API integration
+- Enterprise folder structure
+- Separation of tools and services
+- Response modeling with dataclasses
+- Using OpenAI Agents SDK with Azure AI Foundry
 
-Troubleshooting Steps
+## How To Extend This Lab
 
-1. Verify VPN access
-2. Check Internet connection
-3. Validate user credentials
+You can add more tools by following this pattern:
 
-Assigned Team
+1. Create a new service file in `services/`.
+2. Create a new tool file in `tools/`.
+3. Import the tool in `agent/enterprise_agent.py`.
+4. Add the tool to the agent's `tools` list.
+5. Update the agent instructions.
 
-Network Operations Team
-```
+Example future tools:
 
----
-
-# Final Project Structure
-
-```text
-Enterprise_Agent_Lab/
-│
-├── venv/
-├── .env
-├── requirements.txt
-└── enterprise_agent_architecture.py
-```
-
----
-
-# Lab Summary
-
-Congratulations!
-
-You have successfully built an **Enterprise Multi-Agent Architecture** using:
-
-- Azure AI Foundry GPT-4.1
-- OpenAI Agent SDK
-- Python Virtual Environment
-- Environment Variables (`.env`)
-- Dependency Management (`requirements.txt`)
-- Agent Handoffs
-- Enterprise Workflow Orchestration
-
-This project serves as a foundation for building scalable enterprise AI applications using the OpenAI Agent SDK.
+- Create Jira ticket
+- Send email
+- Query HR policy
+- Create ServiceNow incident
+- Search internal knowledge base
